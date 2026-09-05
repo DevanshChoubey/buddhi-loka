@@ -1,6 +1,6 @@
 export const chatFormatAttention = {
   slug: "chat-format-attention",
-  title: "Why We Format Chats: System, User, Assistant—and What Apollo 13 Taught Us",
+  title: "Why We Format Chats: System, User, Assistant, and Lessons from Apollo 13",
   date: "November 9, 2025",
   author: "Devansh Choubey",
   category: "AI Research",
@@ -8,31 +8,31 @@ export const chatFormatAttention = {
   image: "https://images.unsplash.com/photo-1541873676-a18131494184?q=80&w=2000&h=1000&auto=format&fit=crop",
   content: `
     <h2>Apollo 13's Comm Loops (1970)</h2>
-    <p>When an oxygen tank exploded on Apollo 13, chaos didn't win. NASA's Mission Control ran on rigid communication loops:</p>
+    <p>When an oxygen tank exploded on Apollo 13, NASA's Mission Control relied on a strict communication structure:</p>
     
     <ul>
       <li><strong>CAPCOM</strong> was the only voice to the crew.</li>
       <li><strong>Specialists</strong> (EECOM, GUIDO, etc.) debated on internal loops and routed decisions through the Flight Director.</li>
-      <li>Each transmission had <strong>role + priority</strong> baked in, so in a crisis the right info reached the right ears.</li>
+      <li>Each transmission had a clear <strong>role and priority</strong>, helping the right information reach the right people during a crisis.</li>
     </ul>
     
-    <p>That structure didn't change <em>what</em> was said—it changed <strong>how attention and memory were routed under pressure</strong>.</p>
+    <p>That structure did not change <em>what</em> was said. It changed <strong>how information was routed under pressure</strong>.</p>
     
-    <p>Chat LLMs work surprisingly similar. We add a minimal protocol:</p>
+    <p>Chat-based language models use a similar structure. A minimal version looks like this:</p>
     
     <pre><code>&lt;SYS&gt; director's notes (policies, style)
 &lt;USR&gt; astronaut's question
 &lt;AST&gt; ground's reply</code></pre>
     
-    <p>Those tags are just tokens in a single sequence, but they act like Mission Control's loops: <strong>who's speaking, to whom, and what matters</strong>.</p>
+    <p>These tags are tokens in a single sequence, but they tell the model <strong>who is speaking and which instructions belong to each role</strong>.</p>
     
     <h2>What the Format Buys Us</h2>
     
-    <p><strong>Clear Boundaries → Clean Learning.</strong> In supervised fine-tuning we compute loss only on the assistant span. Role tags mark that span unambiguously—no guessing where the model's response should begin.</p>
+    <p><strong>Clear boundaries improve training.</strong> In supervised fine-tuning, loss is often computed only on the assistant span. Role tags make it clear where the model's response begins.</p>
     
-    <p><strong>Attention Anchors.</strong> Special tokens like <code>&lt;SYS&gt;</code> and <code>&lt;USR&gt;</code> become reliable landmarks. Long prompt? Doesn't matter. The model can re-find these markers even 10k tokens deep.</p>
+    <p><strong>Role tokens provide landmarks.</strong> Special tokens such as <code>&lt;SYS&gt;</code> and <code>&lt;USR&gt;</code> give the model consistent boundaries to attend to, including in long prompts.</p>
     
-    <p><strong>Protocol Memory.</strong> Training with the same template you use in production isn't just good practice—it teaches the model that grammar. Less surprises, more consistency.</p>
+    <p><strong>Consistent templates reduce ambiguity.</strong> Using the same template for training and production helps the model learn the structure it will encounter at inference time.</p>
     
     <h2>Diagram: One Stream, Labeled Spans</h2>
     <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace; overflow-x: auto;">
@@ -68,9 +68,9 @@ export const chatFormatAttention = {
     </p>
     
     <h2>How Formatting Helps Attention</h2>
-    <p>Here's a toy example that's surprisingly telling. Same content, two encodings. Watch where the model's attention goes for the next assistant token:</p>
+    <p>Consider a simplified example with the same content encoded in two ways. The diagrams illustrate how explicit roles can give attention a clearer structure:</p>
     
-    <h3>With Roles → Attention Peaks at the System Boundary and User Span</h3>
+    <h3>With Roles: Attention Peaks at the System Boundary and User Span</h3>
     <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 20px 0;">
       <div style="text-align: center; margin-bottom: 15px; color: #fff; font-weight: bold;">Attention with Explicit Roles</div>
       <div style="display: flex; flex-direction: column; gap: 2px; font-family: monospace; font-size: 0.85em;">
@@ -104,7 +104,7 @@ export const chatFormatAttention = {
       </div>
     </div>
     
-    <h3>Without Roles → Attention Diffuses Across Many Mid-Sentence Tokens</h3>
+    <h3>Without Roles: Attention Diffuses Across Mid-Sentence Tokens</h3>
     <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 20px 0;">
       <div style="text-align: center; margin-bottom: 15px; color: #fff; font-weight: bold;">Attention without Explicit Roles</div>
       <div style="display: flex; flex-direction: column; gap: 2px; font-family: monospace; font-size: 0.85em;">
@@ -136,14 +136,14 @@ export const chatFormatAttention = {
     
     <h2>Why This Happens</h2>
     
-    <p><strong>Boundary tokens as beacons.</strong> Distinct markers learn unique directions in embedding space—they're easy to retrieve. Think of them as bright lighthouses in a sea of prose.</p>
+    <p><strong>Boundary tokens are distinctive.</strong> Repeated role markers can develop representations that make them easier for the model to identify than ordinary prose.</p>
     
-    <p><strong>Less guesswork.</strong> The model doesn't have to infer which earlier sentence was the rule. <code>&lt;SYS&gt;</code> is a unique island it can always find.</p>
+    <p><strong>The model has less to infer.</strong> A <code>&lt;SYS&gt;</code> marker explicitly identifies the span containing system instructions.</p>
     
-    <p><strong>Stability with distance.</strong> Long context window? These anchors counter the "lost in the middle" problem. At 100k tokens, you still need to find that system prompt.</p>
+    <p><strong>Markers remain useful over long contexts.</strong> They can help the model locate important spans, although formatting alone does not solve the "lost in the middle" problem.</p>
     
     <h2>Training-Time View: Assistant-Only Loss</h2>
-    <p>In SFT we mask labels outside the assistant span (loss = 0 on system/user + role tokens). Only the assistant's actual response gets backprop:</p>
+    <p>In a common SFT setup, labels outside the assistant span are masked, so system, user, and role tokens have a loss of zero. Only the assistant's response contributes to the gradient:</p>
     
     <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 20px 0;">
       <div style="text-align: center; margin-bottom: 15px; color: #fff; font-weight: bold;">SFT Loss Mask: labels=1 on assistant tokens, 0 elsewhere</div>
@@ -181,9 +181,9 @@ export const chatFormatAttention = {
       </p>
       </div>
       
-      <p>Chat formatting isn't cosmetic. Like NASA's comm protocols, it doesn't change the <em>information</em>—it changes <strong>how the system routes attention and memory</strong>.</p>
+      <p>Chat formatting is more than a presentation choice. Like NASA's communication protocols, it gives a stream of information an explicit structure.</p>
       
-      <p>In a crisis—or a 50k-token prompt—that structure is the difference between noise and signal.</p>
+      <p>For a language model working through a long prompt, that structure can make instructions and conversational turns easier to distinguish.</p>
       
       <h2>References</h2>
       <ol>
@@ -197,4 +197,3 @@ export const chatFormatAttention = {
   `,
   relatedPosts: [],
 };
-
